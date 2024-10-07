@@ -9,7 +9,11 @@ interface StudentAttributes {
   science: string;
 }
 
-class Student extends Model<ModelAttributes, StudentAttributes> {}
+class Student extends Model<ModelAttributes, StudentAttributes> {
+  name?: string;
+  math?: string;
+  science?: string;
+}
 
 Student.init(
   {

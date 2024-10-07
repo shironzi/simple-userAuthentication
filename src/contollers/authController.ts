@@ -152,7 +152,7 @@ export const login = async (
       { id: user.id, username: user.username, role: user.role },
       secret,
       {
-        expiresIn: "1h",
+        expiresIn: "5m",
       }
     );
 
@@ -163,6 +163,8 @@ export const login = async (
     });
 
     user.token = token;
+
+    await user.save();
 
     res.status(200).json({
       message: "Successfully Login",
