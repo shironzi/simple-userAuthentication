@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 const startServer = async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
+    await sequelize.sync({alter: true});
 
     const PORT = process.env.PORT || 3000;
 

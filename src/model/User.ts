@@ -14,6 +14,7 @@ interface UserAttributes {
   password: string;
   created_at?: Date;
   updated_at?: Date;
+  token?: string;
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, "id"> {}
@@ -25,6 +26,7 @@ export class User extends Model<ModelAttributes, UserCreationAttributes> {
   public password!: string;
   public readonly created_at!: string;
   public readonly updated_at!: string;
+  public readonly token!: string;
 }
 
 User.init(
@@ -46,6 +48,9 @@ User.init(
     password: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    token: {
+      type: DataTypes.STRING,
     },
   },
   {

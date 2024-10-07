@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt, { hashSync, hash } from "bcrypt";
 import { ValidationError, body, validationResult } from "express-validator";
+import jwt from "jsonwebtoken";
 
 import User from "../model/User";
 import { ErrorResponse, UserResponse } from "interfaces/UserResponse";
+import { decode } from "punycode";
 
 export const validateRegister = [
   body("username")
@@ -114,6 +116,7 @@ export const login = async (
 ) => {
   try {
     const { username, password } = req.body;
+    const secret = process.env.SECRET;
 
     if (!username || !password) {
       res.status(409).json({
@@ -137,20 +140,57 @@ export const login = async (
 
     const hashPassword = await bcrypt.compare(password, user.password);
 
-    if(!hashPassword){
+    if (!hashPassword) {
       res.status(404).json({
         message: "Invalid username or password",
       });
       return;
     }
 
-    res.status(200).json({
-      message: "Successfully Login",
-      user: {username: user.username },
+    const token = jwt.sign({ id: user.id, username: user.username }, secret, {
+      expiresIn: "1h",
     });
 
+    await User.findOne({
+      where: {
+        username: username,
+        token: token,
+      },
+    });
+
+    res.status(200).json({
+      message: "Successfully Login",
+      user: { username: user.username },
+    });
   } catch (error) {
     console.error("Unexpected happen during Login: ", error);
     next(error);
+  }
+};
+
+export const verifyToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.header("Authorization");
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ message: "Access denied. No token provided." });
+    return;
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET);
+    (req as any).user = decoded;
+
+    res.status(200).json({
+      message: "token has been verified.",
+    });
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Invalid token." });
   }
 };
