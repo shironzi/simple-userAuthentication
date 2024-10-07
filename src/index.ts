@@ -30,7 +30,7 @@ const startServer = async () => {
 
 startServer();
 
-app.use(authRoutes);
+app.use('/auth',authRoutes);
 // Global error handler
 app.use(errorHandler);
 

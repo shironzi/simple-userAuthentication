@@ -1,8 +1,9 @@
 import express from "express";
-import { register } from '../contollers/authController'
+import { login, register } from '../contollers/authController'
 
 const app = express.Router()
 
 app.post('/register', register);
+app.post('/login', login);
 
 export default app;

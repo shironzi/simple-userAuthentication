@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { hashSync } from "bcrypt";
+import bcrypt, { hashSync, hash } from "bcrypt";
 import { ValidationError, body, validationResult } from "express-validator";
 
 import User from "../model/User";
@@ -47,7 +47,7 @@ export const register = async (
 
     if (!username || !email || !password || !confirmPassword) {
       res.status(404).json({
-        message: "username, email, password, confirmpassword is required",
+        message: "username, email, password, confirm password is required",
       });
       return;
     }
@@ -85,9 +85,9 @@ export const register = async (
       return;
     }
 
-    const saltRounds = 10;
+    const saltRounds = await bcrypt.genSalt(10);
 
-    const hashedPassword = hashSync(password, saltRounds);
+    const hashedPassword = await hash(password, saltRounds);
 
     const user = await User.create({
       username,
@@ -112,13 +112,45 @@ export const login = async (
   res: Response,
   next: NextFunction
 ) => {
-    try{
-        let secret = "my-secret"
-        let data = {
-            time: Date()
-        }
-    }catch (error){
-        console.error("Unexpected happen during Login: ", error)
-        next(error)
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      res.status(409).json({
+        message: "username or password is required",
+      });
+      return;
     }
+
+    const user = await User.findOne({
+      where: {
+        username: username,
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({
+        message: "Invalid username or password.",
+      });
+      return;
+    }
+
+    const hashPassword = await bcrypt.compare(password, user.password);
+
+    if(!hashPassword){
+      res.status(404).json({
+        message: "Invalid username or password",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Successfully Login",
+      user: {username: user.username },
+    });
+
+  } catch (error) {
+    console.error("Unexpected happen during Login: ", error);
+    next(error);
+  }
 };
