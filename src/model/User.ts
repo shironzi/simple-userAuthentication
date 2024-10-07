@@ -1,32 +1,31 @@
 import {
   Model,
-  Sequelize,
-  Optional,
   ModelAttributes,
   DataTypes,
 } from "sequelize";
+
 import sequelize from "../database/database";
 
 interface UserAttributes {
   id: number;
   username: string;
   email: string;
+  role: string;
   password: string;
   created_at?: Date;
   updated_at?: Date;
   token?: string;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, "id"> {}
-
-export class User extends Model<ModelAttributes, UserCreationAttributes> {
+class User extends Model<ModelAttributes, UserAttributes> {
   public id!: number;
   public username!: string;
   public email!: string;
+  public role!: string;
   public password!: string;
   public readonly created_at!: string;
   public readonly updated_at!: string;
-  public readonly token!: string;
+  public token!: string;
 }
 
 User.init(
@@ -44,6 +43,9 @@ User.init(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    role: {
+      type: DataTypes.STRING,
     },
     password: {
       type: DataTypes.STRING,

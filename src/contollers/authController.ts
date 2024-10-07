@@ -36,7 +36,7 @@ export const register = async (
   req: Request,
   res: Response<UserResponse | ErrorResponse>,
   next: NextFunction
-): Promise<void> => {
+) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -56,7 +56,7 @@ export const register = async (
 
     const isUsernameTaken = await User.findOne({
       where: {
-        username,
+        username: username,
       },
     });
 
@@ -94,6 +94,7 @@ export const register = async (
     const user = await User.create({
       username,
       email,
+      role: "regular",
       password: hashedPassword,
     });
 
@@ -147,16 +148,21 @@ export const login = async (
       return;
     }
 
-    const token = jwt.sign({ id: user.id, username: user.username }, secret, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      secret,
+      {
+        expiresIn: "1h",
+      }
+    );
 
     await User.findOne({
       where: {
         username: username,
-        token: token,
       },
     });
+
+    user.token = token;
 
     res.status(200).json({
       message: "Successfully Login",
@@ -185,10 +191,6 @@ export const verifyToken = async (
   try {
     const decoded = jwt.verify(token, process.env.SECRET);
     (req as any).user = decoded;
-
-    res.status(200).json({
-      message: "token has been verified.",
-    });
     next();
   } catch (error) {
     res.status(401).json({ message: "Invalid token." });

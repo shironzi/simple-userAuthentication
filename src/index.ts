@@ -4,6 +4,7 @@ import env from "dotenv";
 import sequelize from "./database/database";
 import errorHandler from "../src/middleware/errorHandler";
 import authRoutes from "../src/routes/authRoutes";
+import studentRoutes from '../src/routes/studentRoutes';
 
 env.config();
 
@@ -31,6 +32,7 @@ const startServer = async () => {
 startServer();
 
 app.use('/auth',authRoutes);
+app.use('/student', studentRoutes);
 // Global error handler
 app.use(errorHandler);
 
