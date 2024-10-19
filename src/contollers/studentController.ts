@@ -17,7 +17,7 @@ export const createStudentRecord = async (
       return;
     }
 
-    if (user.role != "admin") {
+    if (user.role !== "admin") {
       res.status(403).json({
         message: "access is forbidden",
       });
@@ -26,13 +26,18 @@ export const createStudentRecord = async (
 
     const { name, math, science } = req.body;
 
+    if (!name || !math || !science) {
+      res.status(404).json({
+        message: "name | math | science is required",
+      });
+      return;
+    }
+
     const student = await Student.create({
       name,
       math,
       science,
     });
-
-    await student.save();
 
     res.status(201).json({
       message: "Student has been successfully created!",
@@ -62,7 +67,7 @@ export const getStudentRecords = async (
       return;
     }
 
-    if (user.role != "admin" && user.role != "regular") {
+    if (user.role !== "admin" && user.role !== "regular") {
       res.status(403).json({
         message: "access forbidden",
       });
@@ -96,7 +101,7 @@ export const updateStudentRecord = async (
       return;
     }
 
-    if (user.role != "admin") {
+    if (user.role !== "admin") {
       res.status(403).json({
         message: "You don't have access to edit student record",
       });
@@ -104,6 +109,13 @@ export const updateStudentRecord = async (
     }
 
     const { id } = req.params;
+
+    if (!id) {
+      res.status(404).json({
+        message: "id is required!",
+      });
+      return;
+    }
 
     const student = await Student.findByPk(id);
 
@@ -144,6 +156,47 @@ export const deleteStudentRecord = async (
   res: Response,
   next: NextFunction
 ) => {
+  const user = (req as any).user;
+
+  if (!user) {
+    res.status(403).json({
+      message: "You are not authenticated",
+    });
+    return;
+  }
+
+  if (user.role !== "admin") {
+    res.status(403).json({
+      message: "You don't have access",
+    });
+    return;
+  }
+
+  const { id } = req.params;
+
+  if (!id) {
+    res.status(404).json({
+      message: "Id is required!",
+    });
+    return;
+  }
+
+  const student = await Student.findByPk(id);
+
+  if (!student) {
+    res.status(404).json({
+      message: "Student does not exist!",
+    });
+    return;
+  }
+
+  await student.destroy();
+
+  res.status(200).json({
+    message: "Student successfully deleted",
+  });
+  next();
+
   try {
   } catch (error) {
     console.error("Unexpected happen during delete student record: ", error);

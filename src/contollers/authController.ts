@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import bcrypt, { hashSync, hash } from "bcrypt";
-import { ValidationError, body, validationResult } from "express-validator";
+import bcrypt, { hash } from "bcrypt";
+import { body, validationResult } from "express-validator";
 import jwt from "jsonwebtoken";
 
 import User from "../model/User";
 import { ErrorResponse, UserResponse } from "interfaces/UserResponse";
-import { decode } from "punycode";
 
 export const validateRegister = [
   body("username")
@@ -42,6 +41,7 @@ export const register = async (
     if (!errors.isEmpty()) {
       res.status(400).json({
         message: "Error",
+        errors: errors.array()
       });
     }
 
@@ -54,35 +54,21 @@ export const register = async (
       return;
     }
 
-    const isUsernameTaken = await User.findOne({
-      where: {
-        username: username,
-      },
-    });
+    const [isUsernameTaken, isEmailTaken] = await Promise.all([
+      User.findOne({ where: { username } }),
+      User.findOne({ where: { email } }),
+    ]);
 
     if (isUsernameTaken) {
       res.status(409).json({
-        message: "Username was already registered",
+        message: "Username is already taken!",
       });
       return;
     }
-
-    const isEmailTaken = await User.findOne({
-      where: {
-        email,
-      },
-    });
 
     if (isEmailTaken) {
       res.status(409).json({
-        message: "Email was already taken!",
-      });
-      return;
-    }
-
-    if (password != confirmPassword) {
-      res.status(409).json({
-        message: "Password does not match!",
+        message: "Email is already taken!",
       });
       return;
     }
@@ -126,6 +112,13 @@ export const login = async (
       return;
     }
 
+    if (!secret) {
+      res.status(500).json({
+        message: "Internal server error. Missing secret key.",
+      });
+      return;
+    }
+
     const user = await User.findOne({
       where: {
         username: username,
@@ -152,7 +145,7 @@ export const login = async (
       { id: user.id, username: user.username, role: user.role },
       secret,
       {
-        expiresIn: "5m",
+        expiresIn: "1h",
       }
     );
 
@@ -163,7 +156,6 @@ export const login = async (
     });
 
     user.token = token;
-
     await user.save();
 
     res.status(200).json({
